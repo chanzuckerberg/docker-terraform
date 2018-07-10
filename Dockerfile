@@ -1,10 +1,14 @@
 ARG TERRAFORM_VERSION=0.11.7
 
-FROM hashicorp/terraform:${TERRAFORM_VERSION}
-ARG TERRAFORM_VERSION
+FROM alpine as providers
 ARG BLESS_VERSION
 
-# RUN curl --silent --fail -O https://github.com/chanzuckerberg/terraform-provider-bless/releases/download/v${BLESS_VERSION}/terraform-provider-bless_${BLESS_VERSION}_linux_amd64.tar.gz --output terraform-provider-bless.tar.gz
-# RUN tar -zxvf terraform-provider-bless.tar.gz
+RUN apk update && apk add curl tar --no-cache
+RUN mkdir /providers
 
-COPY terraform-provider-bless /bin/
+RUN curl -L --output terraform-provider-bless.tar.gz --silent --fail -O https://github.com/chanzuckerberg/terraform-provider-bless/releases/download/v${BLESS_VERSION}/terraform-provider-bless_${BLESS_VERSION}_linux_amd64.tar.gz
+RUN tar -C /providers -zxf terraform-provider-bless.tar.gz
+
+FROM hashicorp/terraform:${TERRAFORM_VERSION}
+COPY --from=providers /providers/terraform-provider-bless /bin/
+
